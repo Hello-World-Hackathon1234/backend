@@ -1,5 +1,5 @@
 from database import Base
-from sqlalchemy import Column, Integer, String, Boolean, text
+from sqlalchemy import Column, Integer, String, Boolean, text, ARRAY
 from pydantic import BaseModel
 from typing import List
 
@@ -17,7 +17,7 @@ class Club(Base):
     id = Column(Integer,primary_key=True,nullable=False)
     name = Column(String,nullable=False)
     description = Column(String,nullable=False)
-    tags = Column(List[String],nullable=True)
+    tags = Column(ARRAY[String],nullable=True)
     imageUrl = Column(String,nullable=True)
 
 class ClubModel(BaseModel):

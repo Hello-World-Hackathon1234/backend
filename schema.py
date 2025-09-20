@@ -1,6 +1,7 @@
 from database import Base
 from sqlalchemy import Column, Integer, String, Boolean, text
 from pydantic import BaseModel
+from typing import List
 
 class User(Base):
     __tablename__ = "Users"
@@ -16,7 +17,7 @@ class Club(Base):
     id = Column(Integer,primary_key=True,nullable=False)
     name = Column(String,nullable=False)
     description = Column(String,nullable=False)
-    tags = Column(String,nullable=True)
+    tags = Column(List[String],nullable=True)
     imageUrl = Column(String,nullable=True)
 
 class ClubModel(BaseModel):
@@ -24,7 +25,7 @@ class ClubModel(BaseModel):
     id: int
     name: str
     description: str
-    tags: str
+    tags: List[str]
     imageUrl: str
     
     class Config:

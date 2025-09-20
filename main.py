@@ -16,3 +16,4 @@ async def get_club_list(db: Session = Depends(get_db)):
     clubs = db.query(schema.Club).all()
 
     return clubs
+

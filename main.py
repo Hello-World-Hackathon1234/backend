@@ -6,6 +6,7 @@ from typing import List, Annotated
 import schema
 from database import get_db
 from auth_handler import sign_jwt, decode_jwt
+from optimize import find_optimal_foods_greedy
 
 app = FastAPI()
 
@@ -86,3 +87,17 @@ async def login(data: schema.LoginRequest, response: Response, db: Session = Dep
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Hmmmm"
         )
+
+#
+# UNFINISHED
+#
+@app.get("/recommend")
+async def get_recs(request: Request):
+    decoded = decode_jwt(request.cookies.get('token'), os.environ["JWT_SECRET"])
+    try:
+        user = db.query(schema.User).filter(schema.User == decoded['email']).first()
+        
+        # also, make sure that we calculate a different amoutn depending on meal. we dont want a rec for every meal to fill all daily reqs lol
+        item_list = find_optimal_foods_greedy(user.protein, user.carbs, user.fat, user.cals, [])
+    except Exception as e:
+        pass

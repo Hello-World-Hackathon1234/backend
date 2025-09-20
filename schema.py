@@ -1,33 +1,22 @@
 from database import Base
-from sqlalchemy import Column, Integer, String, Boolean, text, ARRAY
+from sqlalchemy import Column, Integer, String, Boolean, text, ARRAY, TIMESTAMP, Float
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 
 class User(Base):
     __tablename__ = "Users"
 
     id = Column(Integer,primary_key=True,nullable=False)
-    name = Column(String,nullable=False)
+    email = Column(String,nullable=False,unique=True)
+    protein = Column(Float,nullable=False)
+    fat = Column(Float,nullable=False)
+    carbs = Column(Float,nullable=False)
+    favorites = Column(ARRAY(String),nullable=True)
 
-# Implement this later for users
+class UserCreate(BaseModel):
 
-class Club(Base):
-    __tablename__ = "Clubs"
-
-    id = Column(Integer,primary_key=True,nullable=False)
-    name = Column(String,nullable=False)
-    description = Column(String,nullable=False)
-    tags = Column(ARRAY(String),nullable=True)
-    imageUrl = Column(String,nullable=True)
-
-class ClubModel(BaseModel):
-
-    id: int
-    name: str
-    description: str
-    tags: List[str]
-    imageUrl: str
-    
-    class Config:
-        orm_model = True
-
+    email: str
+    protein: float
+    fat: float
+    carbs: float
+    favorites: Optional[List[str]] = []

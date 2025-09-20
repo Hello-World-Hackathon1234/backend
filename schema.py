@@ -11,7 +11,13 @@ class User(Base):
     protein = Column(Float,nullable=False)
     fat = Column(Float,nullable=False)
     carbs = Column(Float,nullable=False)
+    cals = Column(Integer,nullable=False)
+    plans = Column(ARRAY(String))
     favorites = Column(ARRAY(String),nullable=True)
+
+class RequestResponse(BaseModel):
+    success: bool
+    message: Optional[str] = ""
 
 class UserCreate(BaseModel):
 
@@ -19,4 +25,14 @@ class UserCreate(BaseModel):
     protein: float
     fat: float
     carbs: float
+    cals: int
+    plans: Optional[List[str]] = []
     favorites: Optional[List[str]] = []
+
+class UserValuesUpdate(BaseModel):
+
+    email: str
+    protein: Optional[float] = None
+    fat: Optional[float] = None
+    carbs: Optional[float] = None
+    cals: Optional[int] = None

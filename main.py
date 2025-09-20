@@ -7,7 +7,7 @@ from database import get_db
 
 app = FastAPI()
 
-@app.post("/create_user")
+@app.post("/create_user", response_model=schema.RequestResponse)
 async def new_user(user_data: schema.UserCreate, db: Session = Depends(get_db)):
     try:
         # Check if email already exists
@@ -30,4 +30,37 @@ async def new_user(user_data: schema.UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error creating user: {str(e)}"
+        )
+
+@app.post("/update_user_macs", response_model=schema.RequestResponse)
+async def update_user(update: schema.UserValuesUpdate, db: Session = Depends(get_db)):
+    print("print 0")
+    try:
+        # Use the actual User model, not schema
+        user = db.query(schema.User).filter(schema.User.email == update.email).first()
+        print("print 1")
+        if not user:
+            return schema.RequestResponse(success=False, message="User does not exist")
+            print("print 2")
+
+        print("print 3")
+        if update.cals is not None:
+            user.cals = update.cals
+        if update.protein is not None:
+            user.protein = update.protein
+        if update.carbs is not None:
+            user.carbs = update.carbs
+        if update.fat is not None:
+            user.fat = update.fat
+        print("print 4")
+        db.commit()
+        db.refresh(user)
+        print("print 5")
+        return schema.RequestResponse(success=True, message="Ok")
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error updating user information: {str(e)}"
         )

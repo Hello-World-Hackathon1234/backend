@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, Depends, Response, Request, Cookie
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from starlette import status
 from typing import List, Annotated
@@ -7,6 +8,14 @@ from database import get_db
 from auth_handler import sign_jwt, decode_jwt
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_method=["*"],
+    allow_headers=["*"],
+)
 
 @app.post("/create_user", response_model=schema.RequestResponse)
 async def new_user(user_data: schema.UserCreate, db: Session = Depends(get_db)):

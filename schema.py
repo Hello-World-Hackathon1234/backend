@@ -11,7 +11,7 @@ class User(Base):
 # Implement this later for users
 
 class Club(Base):
-    __tablename__ = "public.Clubs"
+    __tablename__ = "Clubs"
 
     id = Column(Integer,primary_key=True,nullable=False)
     name = Column(String,nullable=False)

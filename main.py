@@ -13,6 +13,6 @@ async def root():
 
 @app.get("/clubs", response_model=List[schema.ClubModel])
 async def get_club_list(db: Session = Depends(get_db)):
-    clubs = db.query(schema.Club)
+    clubs = db.query(schema.Club).all()
 
     return clubs

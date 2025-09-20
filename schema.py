@@ -8,6 +8,7 @@ class User(Base):
 
     id = Column(Integer,primary_key=True,nullable=False)
     email = Column(String,nullable=False,unique=True)
+    password = Column(String,nullable=False)
     protein = Column(Float,nullable=False)
     fat = Column(Float,nullable=False)
     carbs = Column(Float,nullable=False)
@@ -22,6 +23,7 @@ class RequestResponse(BaseModel):
 class UserCreate(BaseModel):
 
     email: str
+    password: str
     protein: float
     fat: float
     carbs: float
@@ -31,8 +33,12 @@ class UserCreate(BaseModel):
 
 class UserValuesUpdate(BaseModel):
 
-    email: str
     protein: Optional[float] = None
     fat: Optional[float] = None
     carbs: Optional[float] = None
     cals: Optional[int] = None
+
+class LoginRequest(BaseModel):
+
+    email: str
+    password: str

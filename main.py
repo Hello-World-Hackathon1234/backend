@@ -53,7 +53,7 @@ async def estimate_nutrition(file: UploadFile = File(...)):
         media_type="text/plain",
     )
     
-@app.post("/register")
+@app.get("/register")
 async def new_user(request: Request, response: Response, db: Session = Depends(get_db)):
     if request.cookies.get("token") is not None:
         return {"cookie set":"please hold"}

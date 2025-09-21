@@ -53,7 +53,7 @@ async def estimate_nutrition(file: UploadFile = File(...)):
         media_type="text/plain",
     )
     
-@app.get("/register")
+@app.post("/register")
 async def new_user(response: Response, db: Session = Depends(get_db)):
     try:
         
@@ -102,6 +102,10 @@ async def update_user(request: Request, update: schema.UserValuesUpdate, db: Ses
             detail=f"Error updating user information: {str(e)}"
         )
 
+@app.post("/update_user_prefs", response_model=schema.RequestResponse)
+async def update_user_prefs(request:Request, update: schema.UserPrefsUpdate, db: Session = Depends(get_db)):
+    pass
+
 @app.post("/login", response_model=schema.RequestResponse)
 async def login(data: schema.LoginRequest, response: Response, db: Session = Depends(get_db)):
     try:
@@ -123,8 +127,8 @@ async def login(data: schema.LoginRequest, response: Response, db: Session = Dep
 #
 # UNFINISHED
 #
-@app.get("/recommend")
-async def get_recs_hilly(day: int, hall: str, meal_type: str, request: Request, db: Session = Depends(get_db)):
+@app.post("/recommend")
+async def get_recs_hilly(data: schema.RecommendRequest, request: Request, db: Session = Depends(get_db)):
     decoded = decode_jwt(request.cookies.get('token'), os.environ["JWT_SECRET"])
     try:
         user = db.query(schema.User).filter(schema.User.id == decoded['user_id']).first()
@@ -135,11 +139,11 @@ async def get_recs_hilly(day: int, hall: str, meal_type: str, request: Request, 
             "dinner": 18.0
         }
         
-        if meal_type not in meal_times:
+        if data.meal_type not in meal_times:
             raise HTTPException(status_code=400, detail="Invalid meal type")
         
-        target_date = datetime.datetime.now().date() + datetime.timedelta(days=day)
-        meal_hour = meal_times[meal_type]
+        target_date = datetime.datetime.now().date() + datetime.timedelta(days=data.day)
+        meal_hour = meal_times[data.meal_type]
         target_time = datetime.datetime.combine(
             target_date,
             datetime.time(hour=int(meal_hour), minute=int((meal_hour % 1) * 60))
@@ -154,7 +158,7 @@ async def get_recs_hilly(day: int, hall: str, meal_type: str, request: Request, 
             schema.Menu.end_time >= target_time
         )
         
-        items = base.filter(schema.Menu.location == hall).all()
+        items = base.filter(schema.Menu.location == data.hall).all()
         items_list = []
         for entry in items:
             if "Sauce" in entry.name:

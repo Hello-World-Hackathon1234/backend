@@ -55,7 +55,16 @@ class UserValuesUpdate(BaseModel):
     carbs: Optional[float] = None
     cals: Optional[int] = None
 
+class UserPrefsUpdate(BaseModel):
+
+    prefs: List[String]
+
 class LoginRequest(BaseModel):
 
     email: str
     password: str
+
+class RecommendRequest(BaseModel):
+    day: int
+    hall: str
+    meal_type: str

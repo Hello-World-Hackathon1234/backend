@@ -176,8 +176,6 @@ async def get_recs_hilly(data: schema.RecommendRequest, request: Request, db: Se
                 "fat": food.fat,
                 "calories": food.cals
             })
-
-        print(foods_json)
         
         return {"foods": foods_json}
         

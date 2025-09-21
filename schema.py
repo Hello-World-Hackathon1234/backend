@@ -57,7 +57,7 @@ class UserValuesUpdate(BaseModel):
 
 class UserPrefsUpdate(BaseModel):
 
-    prefs: List[String]
+    prefs: List[str]
 
 class LoginRequest(BaseModel):
 

@@ -54,7 +54,9 @@ async def estimate_nutrition(file: UploadFile = File(...)):
     )
     
 @app.post("/register")
-async def new_user(response: Response, db: Session = Depends(get_db)):
+async def new_user(request: Request, response: Response, db: Session = Depends(get_db)):
+    if request.cookies.get("token") is not None:
+        return {"cookie set":"please hold"}
     try:
         
         # Create new user
@@ -76,7 +78,7 @@ async def new_user(response: Response, db: Session = Depends(get_db)):
         )
 
 @app.post("/update_user_macs", response_model=schema.RequestResponse)
-async def update_user(request: Request, update: schema.UserValuesUpdate, db: Session = Depends(get_db)):
+async def update_user(response: Response, request: Request, update: schema.UserValuesUpdate, db: Session = Depends(get_db)):
     decoded = decode_jwt(request.cookies.get('token'), os.environ["JWT_SECRET"])
     try:
         # Use the actual User model, not schema
@@ -97,13 +99,11 @@ async def update_user(request: Request, update: schema.UserValuesUpdate, db: Ses
         return schema.RequestResponse(success=True, message="Ok")
         
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error updating user information: {str(e)}"
-        )
+        response.delete_cookie(key="token")
+        return schema.RequestResponse(success=False, message="Cookie cleared")
 
 @app.post("/update_user_prefs", response_model=schema.RequestResponse)
-async def update_user_prefs(request:Request, update: schema.UserPrefsUpdate, db: Session = Depends(get_db)):
+async def update_user_prefs(response:Response, request:Request, update: schema.UserPrefsUpdate, db: Session = Depends(get_db)):
     decoded = decode_jwt(request.cookies.get('token'), os.environ["JWT_SECRET"])
     try:
         user = db.query(schema.User).filter(schema.User.id == decoded['user_id']).first()
@@ -114,16 +114,15 @@ async def update_user_prefs(request:Request, update: schema.UserPrefsUpdate, db:
         db.refresh(user)
         return schema.RequestResponse(success=True, message="Ok")
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error updating user information: {str(e)}"
-        )
+        response.delete_cookie(key="token")
+        return schema.RequestResponse(success=False, message="Cookie cleared")
+        
 
 #
 # UNFINISHED
 #
 @app.post("/recommend_mean")
-async def get_mean(data: schema.RecommendRequest, request: Request, db: Session = Depends(get_db)):
+async def get_mean(response: Response, data: schema.RecommendRequest, request: Request, db: Session = Depends(get_db)):
     decoded = decode_jwt(request.cookies.get('token'), os.environ["JWT_SECRET"])
     try:
         user = db.query(schema.User).filter(schema.User.id == decoded['user_id']).first()
@@ -256,10 +255,11 @@ async def get_mean(data: schema.RecommendRequest, request: Request, db: Session 
         return {"foods": foods_json, "name": name}
 
     except Exception as e:
-        pass
+        response.delete_cookie(key="token")
+        return schema.RequestResponse(success=False, message="Cookie cleared")
 
 @app.post("/recommend")
-async def get_recs_hilly(data: schema.RecommendRequest, request: Request, db: Session = Depends(get_db)):
+async def get_recs_hilly(response: Response, data: schema.RecommendRequest, request: Request, db: Session = Depends(get_db)):
     decoded = decode_jwt(request.cookies.get('token'), os.environ["JWT_SECRET"])
     try:
         user = db.query(schema.User).filter(schema.User.id == decoded['user_id']).first()
@@ -343,7 +343,8 @@ async def get_recs_hilly(data: schema.RecommendRequest, request: Request, db: Se
         return {"foods": foods_json}
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        response.delete_cookie(key="token")
+        return schema.RequestResponse(success=False, message="Cookie cleared")
 
 @app.post("/rectest")
 async def test(day: int, hall: str, meal_type: str, data: schema.GetMealRequest, db: Session = Depends(get_db)):

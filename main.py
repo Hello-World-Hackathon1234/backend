@@ -138,25 +138,22 @@ async def get_recs_hilly(day: int, hall: str, request: Request, db: Session = De
         )
 
 @app.post("/rectest")
-async def test(data: schema.GetMealRequest, db: Session = Depends(get_db)):
+async def test(day: int, hall: str, data: schema.GetMealRequest, db: Session = Depends(get_db)):
     base = db.query(schema.Food).join(
         schema.Menu,
         schema.Food.id == schema.Menu.item_id
     ).filter(
-        schema.Food.nutrition != "{}"
+        schema.Food.nutrition != "{}",
+        schema.Menu.start_time < datetime.datetime.now().timestamp() + datetime.timedelta(days=day),
+        schema.Menu.end_time > datetime.datetime.now().timestamp() + datetime.timedelta(days=day)
     )
 
-    hilly = base.filter(schema.Menu.location == "Hillenbrand").all()
-    ford = base.filter(schema.Menu.location == "Ford").all()
-    wiley = base.filter(schema.Menu.location == "Wiley").all()
-    earhart = base.filter(schema.Menu.location == "Earhart").all()
-    windor = base.filter(schema.Menu.location == "Windsor").all()
+    items = base.filter(schema.Menu.location == hall).all()
 
-    food_list = []
-
-    for entry in hilly:
-        food_list.append(create_food_item(entry.name, entry.nutrition))
-
-    result_list = find_optimal_foods_balanced(data.protein, data.carbs, data.fat, data.cals, food_list)
+    items_list = []
+    for entry in items:
+        items_list.append(create_food_item(entry.name, entra.nutrition))
+        
+    result_list, total = find_optimal_foods_balanced(data.protein, data.carbs, data.fat, data.cals, items_list)
 
     return result_list

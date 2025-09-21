@@ -59,7 +59,7 @@ async def new_user(response: Response, db: Session = Depends(get_db)):
 
 @app.post("/update_user_macs", response_model=schema.RequestResponse)
 async def update_user(request: Request, update: schema.UserValuesUpdate, db: Session = Depends(get_db)):
-    decoded = decode_jwt(request.cookies.get('token'), os.environ["JWT_TOKEN"])
+    decoded = decode_jwt(request.cookies.get('token'), os.environ["JWT_SECRET"])
     try:
         # Use the actual User model, not schema
         user = db.query(schema.User).filter(schema.User.id == decoded['user_id']).first()

@@ -3,3 +3,6 @@ venv
 __pycache__
 test2.
 output.txt
+test2.py
+.gitignore
+output.txt

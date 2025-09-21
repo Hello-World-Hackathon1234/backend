@@ -64,3 +64,20 @@ def find_optimal_foods_greedy(target_protein, target_carbs, target_fat, target_c
     
     return selected_foods, (current_protein, current_carbs, current_fat, current_cals)
 
+
+def create_food_item(name, nutrition_data):
+    """Take nutrition column data and return a FoodItem object"""
+    
+    # Extract values
+    calories = re.search(r'"name":\s*"Calories".*?"value":\s*([\d.]+)', nutrition_data)
+    fat = re.search(r'"name":\s*"Total fat".*?"value":\s*([\d.]+)', nutrition_data)
+    carbs = re.search(r'"name":\s*"Total Carbohydrate".*?"value":\s*([\d.]+)', nutrition_data)
+    protein = re.search(r'"name":\s*"Protein".*?"value":\s*([\d.]+)', nutrition_data)
+    
+    return FoodItem(
+        name=name,
+        protein=round(float(protein.group(1)), 1) if protein else 0,
+        carbs=round(float(carbs.group(1)), 1) if carbs else 0,
+        fat=round(float(fat.group(1)), 1) if fat else 0,
+        calories=int(float(calories.group(1))) if calories else 0
+    )

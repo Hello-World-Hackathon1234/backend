@@ -16,6 +16,19 @@ class User(Base):
     plans = Column(ARRAY(String))
     favorites = Column(ARRAY(String),nullable=True)
 
+class Food(Base):
+    __tablename__ = "foods"
+
+    id = Column(String,primary_key=True,nullable=False)
+    name = Column(String,nullable=True)
+    ingredients = Column(String,nullable=True)
+    nutrition = Column(String,nullable=True)
+    station = Column(String,nullable=True)
+    traits = Column(ARRAY(String),nullable=True)
+    food_group = Column(ARRAY(String),nullable=True)
+    food_type = Column(ARRAY(String),nullable=True)
+
+
 class RequestResponse(BaseModel):
     success: bool
     message: Optional[str] = ""

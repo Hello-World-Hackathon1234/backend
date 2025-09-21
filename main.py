@@ -95,7 +95,6 @@ async def update_user(response: Response, request: Request, update: schema.UserV
         if update.fat is not None:
             user.fat = update.fat
         db.commit()
-        db.refresh(user)
         return schema.RequestResponse(success=True, message="Ok")
         
     except Exception as e:
@@ -158,7 +157,6 @@ async def get_mean(response: Response, data: schema.RecommendRequest, request: R
         if user.plans is None:
             user.plans = []
             db.commit()
-            db.refresh(user)
 
         if "Vegan" in user.plans:
             items = items.filter(schema.Food.traits.any("Vegan"))

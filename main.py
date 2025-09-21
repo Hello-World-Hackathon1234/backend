@@ -31,7 +31,7 @@ async def generate_meal_plan_stream(request: MealPlanRequest = Body(...)):
         )
     
     return StreamingResponse(
-        stream_generator(request.user_goal, request.food_info),
+        stream_generator(request.user_goal, request.food_info, request.chat_history = None),
         media_type="text/plain",
     )
 

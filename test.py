@@ -17,7 +17,6 @@ def get_streaming_meal_plan(user_goal: str, food_info: str, api_url: str = "http
 
     try:
         with requests.post(api_url, json=request_data, stream=True) as response:
-            # Raise an exception for bad status codes (4xx or 5xx)
             response.raise_for_status()
 
             print("--- Streaming Meal Plan ---")
@@ -32,7 +31,6 @@ def get_streaming_meal_plan(user_goal: str, food_info: str, api_url: str = "http
         print("Error decoding JSON from the response.")
 
 if __name__ == '__main__':
-    # Example usage of the function
     goal = "I want to lose weight and need a low-calorie lunch."
     foods = """
     Available at Wiley Dining Court:

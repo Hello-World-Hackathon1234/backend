@@ -10,6 +10,8 @@ from optimize import find_optimal_foods_greedy, create_food_item, find_optimal_f
 import os
 from fastapi.responses import StreamingResponse
 from advisor_ai import *
+import datetime
+import pytz
 
 app = FastAPI()
 
@@ -106,16 +108,71 @@ async def login(data: schema.LoginRequest, response: Response, db: Session = Dep
 #
 # UNFINISHED
 #
-@app.get("/recommend")
-async def get_recs(request: Request, db: Session = Depends(get_db)):
+@app.get("/recommend_hilly")
+async def get_recs_hilly(day: int, request: Request, db: Session = Depends(get_db)):
     decoded = decode_jwt(request.cookies.get('token'), os.environ["JWT_SECRET"])
     try:
         user = db.query(schema.User).filter(schema.User == decoded['email']).first()
+
+        base = db.query(schema.Food).join(
+            schema.Menu,
+            schema.Food.id == schema.Menu.item_id
+        ).filter(
+            schema.Food.nutrition != "{}",
+            schema.Menu.start_time < datetime.datetime.now().timestamp() + datetime.timedelta(days=day),
+            schema.Menu.end_time > datetime.datetime.now().timestamp() + datetime.timedelta(days=day)
+        )
+
+        items = base.filter(schema.Menu.location == "Hillenbrand").all()
+
+        items_list = []
+        for entry in items:
+            items_list.append(create_food_item(entry.name, entra.nutrition))
         
-        # also, make sure that we calculate a different amoutn depending on meal. we dont want a rec for every meal to fill all daily reqs lol
-        item_list = find_optimal_foods_greedy(user.protein, user.carbs, user.fat, user.cals, [])
+        result_list, total = find_optimal_foods_balanced(user.protein, user.carbs, user.fat, user.cals, items_list)
+
+        return result_list
+        
+        
     except Exception as e:
-        pass
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Hmmmm"
+        )
+
+@app.get("/recommend_ford")
+async def get_recs_hilly(day: int, request: Request, db: Session = Depends(get_db)):
+    decoded = decode_jwt(request.cookies.get('token'), os.environ["JWT_SECRET"])
+    try:
+        user = db.query(schema.User).filter(schema.User == decoded['email']).first()
+
+        base = db.query(schema.Food).join(
+            schema.Menu,
+            schema.Food.id == schema.Menu.item_id
+        ).filter(
+            schema.Food.nutrition != "{}",
+            schema.Menu.start_time < datetime.datetime.now().timestamp() + datetime.timedelta(days=day),
+            schema.Menu.end_time > datetime.datetime.now().timestamp() + datetime.timedelta(days=day)
+        )
+
+        items = base.filter(schema.Menu.location == "Ford").all()
+
+        items_list = []
+        for entry in items:
+            items_list.append(create_food_item(entry.name, entra.nutrition))
+        
+        result_list, total = find_optimal_foods_balanced(user.protein, user.carbs, user.fat, user.cals, items_list)
+
+        return result_list
+        
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Hmmmm"
+        )
+
+# THIS IS THE DUMBEST WAY POSSIBLE OF DOING THIS
 
 @app.post("/rectest")
 async def test(data: schema.GetMealRequest, db: Session = Depends(get_db)):
@@ -127,6 +184,10 @@ async def test(data: schema.GetMealRequest, db: Session = Depends(get_db)):
     )
 
     hilly = base.filter(schema.Menu.location == "Hillenbrand").all()
+    ford = base.filter(schema.Menu.location == "Ford").all()
+    wiley = base.filter(schema.Menu.location == "Wiley").all()
+    earhart = base.filter(schema.Menu.location == "Earhart").all()
+    windor = base.filter(schema.Menu.location == "Windsor").all()
 
     food_list = []
 

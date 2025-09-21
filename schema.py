@@ -7,13 +7,13 @@ class User(Base):
     __tablename__ = "Users"
 
     id = Column(Integer,primary_key=True,nullable=False)
-    email = Column(String,nullable=False,unique=True)
+    username = Column(String,nullable=False,unique=True)
     password = Column(String,nullable=False)
-    protein = Column(Float,nullable=False)
-    fat = Column(Float,nullable=False)
-    carbs = Column(Float,nullable=False)
-    cals = Column(Integer,nullable=False)
-    plans = Column(ARRAY(String))
+    protein = Column(Float,nullable=True)
+    fat = Column(Float,nullable=True)
+    carbs = Column(Float,nullable=True)
+    cals = Column(Integer,nullable=True)
+    plans = Column(ARRAY(String),nullable=True)
     favorites = Column(ARRAY(String),nullable=True)
 
 class Menu(Base):
@@ -46,19 +46,15 @@ class GetMealRequest(BaseModel):
     cals: int
 
 class RequestResponse(BaseModel):
+    
     success: bool
     message: Optional[str] = ""
 
 class UserCreate(BaseModel):
 
-    email: str
+    name: str
+    username: str
     password: str
-    protein: float
-    fat: float
-    carbs: float
-    cals: int
-    plans: Optional[List[str]] = []
-    favorites: Optional[List[str]] = []
 
 class UserValuesUpdate(BaseModel):
 

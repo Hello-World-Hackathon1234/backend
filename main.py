@@ -35,11 +35,11 @@ async def generate_meal_plan_stream(request: MealPlanRequest = Body(...)):
         media_type="text/plain",
     )
 
-@app.post("/create_user", response_model=schema.RequestResponse)
+@app.post("/register", response_model=schema.RequestResponse)
 async def new_user(user_data: schema.UserCreate, db: Session = Depends(get_db)):
     try:
         # Check if email already exists
-        existing_user = db.query(schema.User).filter(schema.User.email == user_data.email).first()
+        existing_user = db.query(schema.User).filter(schema.User.username == user_data.username).first()
         if existing_user:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,

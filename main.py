@@ -128,24 +128,20 @@ async def get_recs_hilly(day: int, hall: str, meal_type: str, request: Request, 
     decoded = decode_jwt(request.cookies.get('token'), os.environ["JWT_SECRET"])
     try:
         user = db.query(schema.User).filter(schema.User.id == decoded['user_id']).first()
-
-        # Define meal times
+        
         meal_times = {
-            "breakfast": 8.5,  # 8:30 AM
-            "lunch": 12.0,     # 12:00 PM  
-            "dinner": 18.0     # 6:00 PM
+            "breakfast": 8.5,
+            "lunch": 12.0,
+            "dinner": 18.0
         }
         
         if meal_type not in meal_times:
-            raise HTTPException(status_code=400, detail="Invalid meal type. Use: breakfast, lunch, dinner")
+            raise HTTPException(status_code=400, detail="Invalid meal type")
         
-        # Get the target date and set specific meal time
         target_date = datetime.datetime.now().date() + datetime.timedelta(days=day)
         meal_hour = meal_times[meal_type]
-        
-        # Create datetime for the specific meal time
         target_time = datetime.datetime.combine(
-            target_date, 
+            target_date,
             datetime.time(hour=int(meal_hour), minute=int((meal_hour % 1) * 60))
         )
         
@@ -154,8 +150,8 @@ async def get_recs_hilly(day: int, hall: str, meal_type: str, request: Request, 
             schema.Food.id == schema.Menu.item_id
         ).filter(
             schema.Food.nutrition != "{}",
-            schema.Menu.start_time <= target_time,  # Menu starts before or at meal time
-            schema.Menu.end_time >= target_time     # Menu ends after or at meal time
+            schema.Menu.start_time <= target_time,
+            schema.Menu.end_time >= target_time
         )
         
         items = base.filter(schema.Menu.location == hall).all()
@@ -165,15 +161,22 @@ async def get_recs_hilly(day: int, hall: str, meal_type: str, request: Request, 
                 continue
             items_list.append(create_food_item(entry.name, entry.nutrition))
         
-        result_list = find_optimal_foods_balanced(user.protein, user.carbs, user.fat, user.cals, items_list)
-        return result_list
+        result_list, totals = find_optimal_foods_balanced(user.protein, user.carbs, user.fat, user.cals, items_list)
         
+        foods_json = []
+        for food in result_list:
+            foods_json.append({
+                "name": food.name,
+                "protein": food.protein,
+                "carbs": food.carbs,
+                "fat": food.fat,
+                "calories": food.calories
+            })
+        
+        return {"foods": foods_json}
         
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/rectest")
 async def test(day: int, hall: str, meal_type: str, data: schema.GetMealRequest, db: Session = Depends(get_db)):

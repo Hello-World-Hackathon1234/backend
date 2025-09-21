@@ -11,6 +11,10 @@ import os
 from fastapi.responses import StreamingResponse
 from advisor_ai import *
 import datetime
+from PIL import Image
+import io
+import json
+from fastapi import UploadFile, HTTPException, File
 import pytz
 
 app = FastAPI()
@@ -35,6 +39,20 @@ async def generate_meal_plan_stream(request: MealPlanRequest = Body(...)):
         media_type="text/plain",
     )
 
+@app.post("/estimate-nutrition")
+async def estimate_nutrition(file: UploadFile = File(...)):
+    if not os.getenv("GOOGLE_API_KEY"):
+        raise HTTPException(
+            status_code=500, detail="GOOGLE_API_KEY environment variable not set."
+        )
+    
+    image_bytes = await file.read()
+    
+    return StreamingResponse(
+        image_stream_generator(image_bytes),
+        media_type="text/plain",
+    )
+    
 @app.get("/register")
 async def new_user(response: Response, db: Session = Depends(get_db)):
     try:

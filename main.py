@@ -192,7 +192,7 @@ async def get_recs_hilly(data: schema.RecommendRequest, request: Request, db: Se
                 continue
             items_list.append(create_food_item(entry.name, entry.nutrition))
         
-        result_list, totals = find_optimal_foods_greedy(user.protein / 3, user.carbs / 3, user.fat / 3, user.cals / 3, items_list)
+        result_list, totals = find_optimal_foods_balanced(user.protein / 3, user.carbs / 3, user.fat / 3, user.cals / 3, items_list)
         
         foods_json = []
         for food in result_list:

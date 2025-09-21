@@ -62,7 +62,7 @@ async def update_user(request: Request, update: schema.UserValuesUpdate, db: Ses
     decoded = decode_jwt(request.cookies.get('token'), os.environ("JWT_TOKEN"))
     try:
         # Use the actual User model, not schema
-        user = db.query(schema.User).filter(schema.User.email == decoded['email']).first()
+        user = db.query(schema.User).filter(schema.User.id == decoded['user_id']).first()
         if not user:
             return schema.RequestResponse(success=False, message="User does not exist")
             

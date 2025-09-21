@@ -190,8 +190,9 @@ async def test(day: int, hall: str, meal_type: str, data: schema.GetMealRequest,
     items = base.filter(schema.Menu.location == hall).all()
     items_list = []
     for entry in items:
-        print()
+        if "Sauce" in entry.name:
+            continue
         items_list.append(create_food_item(entry.name, entry.nutrition))
     
-    result_list, total = find_optimal_foods_balanced(data.protein, data.carbs, data.fat, data.cals, items_list)
+    result_list = find_optimal_foods_balanced(data.protein, data.carbs, data.fat, data.cals, items_list)
     return result_list

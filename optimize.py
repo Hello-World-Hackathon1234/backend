@@ -155,6 +155,10 @@ def find_optimal_foods_balanced(target_protein, target_carbs, target_fat, target
     sides = []
     
     for food in food_items:
+
+        if "Sauce" in food.name:
+            continue
+
         protein_ratio = food.protein / max(food.cals, 1) if food.cals > 0 else 0
         
         # Main dish: high protein OR high calories OR good protein density

@@ -1,42 +1,56 @@
 import requests
+import os
 import json
+import re
 
-def get_streaming_meal_plan(user_goal: str, food_info: str, api_url: str = "http://127.0.0.1:8000/generate-meal-plan-stream"):
-    """
-    Queries the meal plan API and prints the streaming response.
+BASE_URL = "http://127.0.0.1:8000" 
+ENDPOINT = "/estimate-nutrition"
+IMAGE_FILENAME = "./image.png"
 
-    Args:
-        user_goal (str): The user's dietary goal.
-        food_info (str): Information about available food.
-        api_url (str, optional): The URL of the API endpoint. Defaults to "http://127.0.0.1:8000/generate-meal-plan-stream".
-    """
-    request_data = {
-        "user_goal": user_goal,
-        "food_info": food_info
-    }
+def test_image_upload():
+    url = f"{BASE_URL}{ENDPOINT}"
+
+    if not os.path.exists(IMAGE_FILENAME):
+        print(f"Error: Image file not found at '{IMAGE_FILENAME}'")
+        print("Please make sure the image is in the same directory as this script.")
+        return
 
     try:
-        with requests.post(api_url, json=request_data, stream=True) as response:
-            response.raise_for_status()
+        with open(IMAGE_FILENAME, "rb") as image_file:
+            files = {"file": (os.path.basename(IMAGE_FILENAME), image_file, "image/jpeg")}
+            
+            print(f"Uploading '{IMAGE_FILENAME}' to {url}...")
+            response = requests.post(url, files=files, stream=True)
+            
+            if response.status_code == 200:
+                print("\nSuccess!")
+                
+                full_response_text = ""
+                for chunk in response.iter_content(decode_unicode=True):
+                    if chunk:
+                        print(chunk, end="", flush=True)
+                        full_response_text += chunk
+                
+                print("\n\nEnd of Stream")
+                json_match = re.search(r'\|\|(.*?)\|\|', full_response_text, re.DOTALL)
+                if json_match:
+                    try:
+                        json_data = json.loads(json_match.group(1))
+                        print("\n--- Parsed JSON Data ---")
+                        print(json.dumps(json_data, indent=2))
+                    except json.JSONDecodeError:
+                        print("\nCould not parse the extracted JSON content.")
+                else:
+                    print("\nCould not find a JSON object wrapped in '||' in the response.")
 
-            print("--- Streaming Meal Plan ---")
-            for chunk in response.iter_content(chunk_size=8192):
-                if chunk:
-                    print(chunk.decode('utf-8'), end='')
-            print("\n--- End of Stream ---")
+            else:
+                print(response.text)
 
-    except requests.exceptions.RequestException as e:
-        print(f"An error occurred: {e}")
-    except json.JSONDecodeError:
-        print("Error decoding JSON from the response.")
+    except requests.exceptions.ConnectionError as e:
+        print(f"\n❌ Connection Error: Could not connect to the server at {BASE_URL}.")
+        print("Please make sure your FastAPI application is running.")
+    except Exception as e:
+        print(f"\nAn unexpected error occurred: {e}")
 
-if __name__ == '__main__':
-    goal = "I want to lose weight and need a low-calorie lunch."
-    foods = """
-    Available at Wiley Dining Court:
-    - Salad Bar with mixed greens, tomatoes, cucumbers, grilled chicken strips, light vinaigrette
-    - Turkey and Swiss on whole wheat bread
-    - Apple
-    - Banana
-    """
-    get_streaming_meal_plan(goal, foods)
+if __name__ == "__main__":
+    test_image_upload()

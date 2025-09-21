@@ -170,7 +170,7 @@ async def get_recs_hilly(day: int, hall: str, meal_type: str, request: Request, 
                 "protein": food.protein,
                 "carbs": food.carbs,
                 "fat": food.fat,
-                "calories": food.calories
+                "calories": food.cals
             })
         
         return {"foods": foods_json}

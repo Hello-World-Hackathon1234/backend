@@ -36,7 +36,7 @@ async def generate_meal_plan_stream(request: MealPlanRequest = Body(...)):
     )
 
 @app.get("/register")
-async def new_user(db: Session = Depends(get_db)):
+async def new_user(response: Response, db: Session = Depends(get_db)):
     try:
         
         # Create new user
@@ -44,8 +44,12 @@ async def new_user(db: Session = Depends(get_db)):
         db.add(db_user)
         db.commit()
         db.refresh(db_user)
+
+        token = sign_jwt(db_user.id, os.environ["JWT_SECRET"])
+
+        response.set_cookie(key="token", value=token, httponly=True)
         
-        return db_user
+        return {success: "YAYYYYY"}
     except Exception as e:
         db.rollback()
         raise HTTPException(

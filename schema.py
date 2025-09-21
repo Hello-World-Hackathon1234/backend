@@ -63,8 +63,3 @@ class LoginRequest(BaseModel):
 
     email: str
     password: str
-
-class RecommendRequest(BaseModel):
-    day: int
-    hall: str
-    meal_type: str

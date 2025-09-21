@@ -103,6 +103,7 @@ async def stream_generator(user_goal: str, food_info: str):
             config=generate_content_config,
         ):
             print(chunk.text, end="")
+            yield chunk.text
     except Exception as e:
         error_message = f"An error occurred while generating the meal plan: {str(e)}"
         yield error_message

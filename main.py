@@ -104,24 +104,19 @@ async def update_user(request: Request, update: schema.UserValuesUpdate, db: Ses
 
 @app.post("/update_user_prefs", response_model=schema.RequestResponse)
 async def update_user_prefs(request:Request, update: schema.UserPrefsUpdate, db: Session = Depends(get_db)):
-    pass
-
-@app.post("/login", response_model=schema.RequestResponse)
-async def login(data: schema.LoginRequest, response: Response, db: Session = Depends(get_db)):
+    decoded = decode_jwt(request.cookies.get('token'), os.environ["JWT_SECRET"])
     try:
-        user = db.query(schema.User).filter(schema.User.email == data.email).filter(schema.User.password == data.password).first()
+        user = db.query(schema.User).filter(schema.User.id == decoded['user_id']).first()
 
-        if not user:
-            return schema.RequestResponse({success: False, message: "Either username or password is incorrect"})
+        user.plans = update.prefs
 
-        token = sign_jwt(data.email, os.environ["JWT_SECRET"])
-        response.set_cookie(key="token", value=token, httponly=True, secure=True)
-        return schema.RequestResponse({success: True})
-        
+        db.commit()
+        db.refresh(user)
+        return schema.RequestResponse(success=True, message="Ok")
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Hmmmm"
+            detail=f"Error updating user information: {str(e)}"
         )
 
 #

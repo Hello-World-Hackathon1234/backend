@@ -152,7 +152,7 @@ async def test(day: int, hall: str, data: schema.GetMealRequest, db: Session = D
 
     items_list = []
     for entry in items:
-        items_list.append(create_food_item(entry.name, entra.nutrition))
+        items_list.append(create_food_item(entry.name, entry.nutrition))
         
     result_list, total = find_optimal_foods_balanced(data.protein, data.carbs, data.fat, data.cals, items_list)
 

@@ -106,31 +106,47 @@ async def login(data: schema.LoginRequest, response: Response, db: Session = Dep
 # UNFINISHED
 #
 @app.get("/recommend")
-async def get_recs_hilly(day: int, hall: str, request: Request, db: Session = Depends(get_db)):
+async def get_recs_hilly(day: int, hall: str, meal_type: str, request: Request, db: Session = Depends(get_db)):
     decoded = decode_jwt(request.cookies.get('token'), os.environ["JWT_SECRET"])
     try:
         user = db.query(schema.User).filter(schema.User == decoded['email']).first()
 
-        target_time = datetime.datetime.now() + datetime.timedelta(days=day)
-        target_timestamp = target_time.timestamp()
+        # Define meal times
+        meal_times = {
+            "breakfast": 8.5,  # 8:30 AM
+            "lunch": 12.0,     # 12:00 PM  
+            "dinner": 18.0     # 6:00 PM
+        }
+        
+        if meal_type not in meal_times:
+            raise HTTPException(status_code=400, detail="Invalid meal type. Use: breakfast, lunch, dinner")
+        
+        # Get the target date and set specific meal time
+        target_date = datetime.datetime.now().date() + datetime.timedelta(days=day)
+        meal_hour = meal_times[meal_type]
+        
+        # Create datetime for the specific meal time
+        target_time = datetime.datetime.combine(
+            target_date, 
+            datetime.time(hour=int(meal_hour), minute=int((meal_hour % 1) * 60))
+        )
         
         base = db.query(schema.Food).join(
             schema.Menu,
             schema.Food.id == schema.Menu.item_id
         ).filter(
             schema.Food.nutrition != "{}",
-            schema.Menu.start_time < target_timestamp,
-            schema.Menu.end_time > target_timestamp
+            schema.Menu.start_time <= target_time,  # Menu starts before or at meal time
+            schema.Menu.end_time >= target_time     # Menu ends after or at meal time
         )
-
+        
         items = base.filter(schema.Menu.location == hall).all()
-
         items_list = []
         for entry in items:
-            items_list.append(create_food_item(entry.name, entra.nutrition))
+            print()
+            items_list.append(create_food_item(entry.name, entry.nutrition))
         
         result_list, total = find_optimal_foods_balanced(user.protein, user.carbs, user.fat, user.cals, items_list)
-
         return result_list
         
         
@@ -141,23 +157,41 @@ async def get_recs_hilly(day: int, hall: str, request: Request, db: Session = De
         )
 
 @app.post("/rectest")
-async def test(day: int, hall: str, data: schema.GetMealRequest, db: Session = Depends(get_db)):
-    target_time = datetime.datetime.now() + datetime.timedelta(days=day)
-    target_timestamp = target_time.timestamp()
+async def test(day: int, hall: str, meal_type: str, data: schema.GetMealRequest, db: Session = Depends(get_db)):
+    # Define meal times
+    meal_times = {
+        "breakfast": 8.5,  # 8:30 AM
+        "lunch": 12.0,     # 12:00 PM  
+        "dinner": 18.0     # 6:00 PM
+    }
+    
+    if meal_type not in meal_times:
+        raise HTTPException(status_code=400, detail="Invalid meal type. Use: breakfast, lunch, dinner")
+    
+    # Get the target date and set specific meal time
+    target_date = datetime.datetime.now().date() + datetime.timedelta(days=day)
+    meal_hour = meal_times[meal_type]
+    
+    # Create datetime for the specific meal time
+    target_time = datetime.datetime.combine(
+        target_date, 
+        datetime.time(hour=int(meal_hour), minute=int((meal_hour % 1) * 60))
+    )
     
     base = db.query(schema.Food).join(
         schema.Menu,
         schema.Food.id == schema.Menu.item_id
     ).filter(
         schema.Food.nutrition != "{}",
-        schema.Menu.start_time < target_timestamp,
-        schema.Menu.end_time > target_timestamp
+        schema.Menu.start_time <= target_time,  # Menu starts before or at meal time
+        schema.Menu.end_time >= target_time     # Menu ends after or at meal time
     )
     
     items = base.filter(schema.Menu.location == hall).all()
     items_list = []
     for entry in items:
-        items_list.append(create_food_item(entry.name, entry.nutrition))  # Also fixed the typo
+        print()
+        items_list.append(create_food_item(entry.name, entry.nutrition))
     
     result_list, total = find_optimal_foods_balanced(data.protein, data.carbs, data.fat, data.cals, items_list)
     return result_list

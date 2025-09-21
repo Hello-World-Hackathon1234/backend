@@ -76,6 +76,11 @@ async def stream_generator(user_goal: str, food_info: str, chat_history: Optiona
     """
     Generates a meal plan stream based on user goals and food information.
     """
+
+    history = ""
+    for x in chat_history:
+        f'Role: {x.role}\nText: {x.text}\n\n'
+    
     try:
         client = genai.Client(
             api_key=os.getenv("GOOGLE_API_KEY"),
@@ -86,7 +91,7 @@ async def stream_generator(user_goal: str, food_info: str, chat_history: Optiona
             types.Content(
                 role="user",
                 parts=[
-                    types.Part.from_text(text=USER_INSTRUCTIONS_TEMPLATE.format(
+                    types.Part.from_text(text=f"History: {history}\n\n" + USER_INSTRUCTIONS_TEMPLATE.format(
                     food_info=food_info, user_goal=user_goal
                 )),
                 ],

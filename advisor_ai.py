@@ -1,0 +1,136 @@
+import os
+from fastapi import FastAPI, HTTPException, Body
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
+import google.generativeai as genai
+from google.generativeai.types import GenerationConfig
+from google.generativeai.tools import Tool, GoogleSearch
+
+class MealPlanRequest(BaseModel):
+    user_goal: str
+    food_info: str
+
+app = FastAPI(
+    title="Streaming Diet Advisor API",
+    description="An API that generates a personalized meal plan from Purdue's dining courts based on user goals.",
+    version="1.0.0"
+)
+
+SYSTEM_PROMPT = """
+You are a diet advisor. You should help the user reach their goals using the information provided to you. Please start by Google searching, research best practices and tips/tricks, any other useful information including best communication methods. There is a dictionary of all food at Purdue. Please use it and don't suggest anything not there. Say specific item names etc. Whenever you suggest food send the name from the dictionary and some of their ingredients.
+
+THE ONLY FOOD THEY CAN EAT IS THE FOOD IN THE PROVIDED LIST. IF IT IS NOT THERE, THEY CANNOT EAT IT. IF THERE IS NO SUITABLE FOOD, EXPLAIN WHY. LISTEN TO THEIR GOALS AND ENSURE YOU RESPECT THEIR HARD CONSTRAINTS. SHARE THE NUTRIENT INFO OF THE DIET YOU PROPOSE AND SPECIFIC ITEMS.
+"""
+
+USER_INSTRUCTIONS_TEMPLATE = """
+DINING COURT FOOD:
+{food_info}
+
+You are a dining court diet advisor for Purdue University. Your only goal is to help the user with the information provided. Please start by Google searching to research the best practices and tips/tricks for their goal.
+
+Dining courts at Purdue work like this:
+One meal swipe gets one meal at one dining court. Students get a set amount every week, but the food at the dining courts is unlimited per entry. Theoretically, they could stay in a dining court and eat multiple meals there, but they won't get re-entry on the same swipe. They can carry food out, but it's limited to one main dish and two sides, along with a fountain drink.
+
+INSTRUCTIONS:
+1. First, consider what is healthy and safe for the user.
+2. Second, consider their hard constraints, soft constraints, and any other information.
+3. Third, write the options and consider tradeoffs. Think and plan your response.
+4. Finally, send their finalized meal plan in the specified JSON format. To ensure we only parse the JSON file, put the entire JSON object inside ||s.
+
+JSON FORMAT:
+WE also need total carbs, sugars, etc.
+This is how it should be formatted:
+
+||{{
+  "dinner": {{
+    "location_dinner": "Earhart",
+    "justification_dinner": "A Malibu Burger on a GF bun offers a plant-based protein source and fiber. Roasted broccolini and corn provide essential vitamins, minerals, and additional fiber for a well-rounded meal.",
+    "total_cals_dinner": 580.68,
+    "total_fat_dinner": 24.8,
+    "total_saturated_fat_dinner": 2.17,
+    "total_cholesterol_dinner": 0.0,
+    "total_sodium_dinner": 867.69,
+    "total_carbohydrate_dinner": 84.95,
+    "total_sugar_dinner": 10.88,
+    "total_added_sugar_dinner": 6.0,
+    "total_dietary_fiber_dinner": 14.52,
+    "total_protein_dinner": 13.61,
+    "items": [
+      {{
+        "item_name": "Malibu Burger on GF Bun",
+        "substation": "Grill",
+        "servings": 1,
+        "ingredients": ["Malibu Burger", "Gluten-Free Bun"],
+        "common_allergens": ["Soy", "Wheat"],
+        "total_cals_item": 450,
+        "total_fat_item": 20
+      }}
+    ]
+  }},
+  "daily_totals": {{
+    "meals": 1,
+    "justification": "They are only eating one meal with us and will get their recommended daily nutrition.",
+    "total_calories": 1247.26,
+    "total_fat": 47.92,
+    "total_protein": 41.73
+  }}
+}}||
+
+If they ask for something impossible, state it in the justification, but do your best to meet their needs. THEY MIGHT WANT MORE THAN ONE MEAL AND HAVE OTHER CONSTRAINTS.
+
+User Goal: {user_goal}
+"""
+
+async def stream_generator(user_goal: str, food_info: str):
+    try:
+        api_key = os.getenv("GOOGLE_API_KEY")
+        if not api_key:
+            yield "Error: GOOGLE_API_KEY environment variable not set."
+            return
+            
+        genai.configure(api_key=api_key)
+
+        model = genai.GenerativeModel(
+            model_name="gemini-1.5-flash",
+            system_instruction=SYSTEM_PROMPT,
+        )
+
+        generation_config = GenerationConfig(temperature=0.2)
+        tools = [Tool(google_search=GoogleSearch())]
+        
+        final_user_instructions = USER_INSTRUCTIONS_TEMPLATE.format(
+            food_info=food_info,
+            user_goal=user_goal
+        )
+        
+        stream = model.generate_content(
+            contents=final_user_instructions,
+            generation_config=generation_config,
+            tools=tools,
+            stream=True
+        )
+
+        for chunk in stream:
+            if chunk.text:
+                yield chunk.text
+
+    except Exception as e:
+        error_message = f"An error occurred while generating the meal plan: {str(e)}"
+        yield error_message
+
+@app.post("/generate-meal-plan-stream")
+async def generate_meal_plan_stream(request: MealPlanRequest = Body(...)):
+    if not os.getenv("GOOGLE_API_KEY"):
+        raise HTTPException(
+            status_code=500,
+            detail="GOOGLE_API_KEY environment variable not set."
+        )
+    
+    return StreamingResponse(
+        stream_generator(request.user_goal, request.food_info),
+        media_type="text/plain"
+    )
+
+@app.get("/")
+def read_root():
+    return {"status": "Diet Advisor API is running"}

@@ -127,7 +127,7 @@ async def login(data: schema.LoginRequest, response: Response, db: Session = Dep
 async def get_recs_hilly(day: int, hall: str, meal_type: str, request: Request, db: Session = Depends(get_db)):
     decoded = decode_jwt(request.cookies.get('token'), os.environ["JWT_SECRET"])
     try:
-        user = db.query(schema.User).filter(schema.User == decoded['email']).first()
+        user = db.query(schema.User).filter(schema.User.id == decoded['user_id']).first()
 
         # Define meal times
         meal_times = {

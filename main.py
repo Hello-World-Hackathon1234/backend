@@ -99,8 +99,10 @@ async def update_user(response: Response, request: Request, update: schema.UserV
         return schema.RequestResponse(success=True, message="Ok")
         
     except Exception as e:
-        response.delete_cookie(key="token")
-        return schema.RequestResponse(success=False, message=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error creating user: {str(e)}"
+        )
 
 @app.post("/update_user_prefs", response_model=schema.RequestResponse)
 async def update_user_prefs(response:Response, request:Request, update: schema.UserPrefsUpdate, db: Session = Depends(get_db)):
@@ -114,8 +116,10 @@ async def update_user_prefs(response:Response, request:Request, update: schema.U
         db.refresh(user)
         return schema.RequestResponse(success=True, message="Ok")
     except Exception as e:
-        response.delete_cookie(key="token")
-        return schema.RequestResponse(success=False, message=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error creating user: {str(e)}"
+        )
         
 
 #
@@ -255,8 +259,10 @@ async def get_mean(response: Response, data: schema.RecommendRequest, request: R
         return {"foods": foods_json, "name": name}
 
     except Exception as e:
-        response.delete_cookie(key="token")
-        return schema.RequestResponse(success=False, message=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error creating user: {str(e)}"
+        )
 
 @app.post("/recommend")
 async def get_recs_hilly(response: Response, data: schema.RecommendRequest, request: Request, db: Session = Depends(get_db)):
@@ -343,8 +349,10 @@ async def get_recs_hilly(response: Response, data: schema.RecommendRequest, requ
         return {"foods": foods_json}
         
     except Exception as e:
-        response.delete_cookie(key="token")
-        return schema.RequestResponse(success=False, message=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error creating user: {str(e)}"
+        )
 
 @app.post("/rectest")
 async def test(day: int, hall: str, meal_type: str, data: schema.GetMealRequest, db: Session = Depends(get_db)):

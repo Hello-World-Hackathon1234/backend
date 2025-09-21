@@ -16,6 +16,16 @@ class User(Base):
     plans = Column(ARRAY(String))
     favorites = Column(ARRAY(String),nullable=True)
 
+class Menu(Base):
+    __tablename__ = "menus"
+
+    id = Column(Integer,primary_key=True)
+    location = Column(String,nullable=False)
+    date = Column(String,nullable=True)
+    item_id = Column(String,nullable=False)
+    start_time = Column(TIMESTAMP,nullable=True)
+    end_time = Column(TIMESTAMP,nullable=True)
+
 class Food(Base):
     __tablename__ = "foods"
 
@@ -28,6 +38,12 @@ class Food(Base):
     food_group = Column(ARRAY(String),nullable=True)
     food_type = Column(ARRAY(String),nullable=True)
 
+class GetMealRequest(BaseModel):
+
+    fat: float
+    carbs: float
+    protein: float
+    cals: int
 
 class RequestResponse(BaseModel):
     success: bool

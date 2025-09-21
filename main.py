@@ -6,7 +6,7 @@ from typing import List, Annotated
 import schema
 from database import get_db
 from auth_handler import sign_jwt, decode_jwt
-from optimize import find_optimal_foods_greedy
+from optimize import find_optimal_foods_greedy, create_food_item, find_optimal_foods_balanced
 
 app = FastAPI()
 
@@ -14,7 +14,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
-    allow_method=["*"],
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
@@ -92,7 +92,7 @@ async def login(data: schema.LoginRequest, response: Response, db: Session = Dep
 # UNFINISHED
 #
 @app.get("/recommend")
-async def get_recs(request: Request):
+async def get_recs(request: Request, db: Session = Depends(get_db)):
     decoded = decode_jwt(request.cookies.get('token'), os.environ["JWT_SECRET"])
     try:
         user = db.query(schema.User).filter(schema.User == decoded['email']).first()
@@ -101,3 +101,23 @@ async def get_recs(request: Request):
         item_list = find_optimal_foods_greedy(user.protein, user.carbs, user.fat, user.cals, [])
     except Exception as e:
         pass
+
+@app.post("/rectest")
+async def test(data: schema.GetMealRequest, db: Session = Depends(get_db)):
+    base = db.query(schema.Food).join(
+        schema.Menu,
+        schema.Food.id == schema.Menu.item_id
+    ).filter(
+        schema.Food.nutrition != "{}"
+    )
+
+    hilly = base.filter(schema.Menu.location == "Hillenbrand").all()
+
+    food_list = []
+
+    for entry in hilly:
+        food_list.append(create_food_item(entry.name, entry.nutrition))
+
+    result_list = find_optimal_foods_balanced(data.protein, data.carbs, data.fat, data.cals, food_list)
+
+    return result_list

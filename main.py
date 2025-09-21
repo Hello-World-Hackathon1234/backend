@@ -122,9 +122,6 @@ async def update_user_prefs(response:Response, request:Request, update: schema.U
         )
         
 
-#
-# UNFINISHED
-#
 @app.post("/recommend_mean")
 async def get_mean(response: Response, data: schema.RecommendRequest, request: Request, db: Session = Depends(get_db)):
     decoded = decode_jwt(request.cookies.get('token'), os.environ["JWT_SECRET"])
@@ -237,7 +234,7 @@ async def get_mean(response: Response, data: schema.RecommendRequest, request: R
             sol = f_result
             name = "Ford"
         if r == "h":
-            sol = r_result
+            sol = h_result
             name = "Hillenbrand"
         if r == "w":
             sol = w_result

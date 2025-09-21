@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from google import genai
 from google.genai import types
 from typing import List, Optional
+import os
 
 # Define a model for a single chat message
 class ChatMessage(BaseModel):
@@ -72,6 +73,154 @@ If they ask for something impossible, state it in the justification, but do your
 User Goal: {user_goal}
 """
 
+IMAGE_PROMPT_TEMPLATE = """Please give the most accurate and realistic nutritional estimate for this food.
+
+First, enumerate what you see in the photo, second, Google nutritional information for it, third calculate and summarize and lastly put into json format.
+
+
+INSTRUCTIONS:
+1. First, enumerate what you see in the photo and consider any objects of reference or obstruction.
+2. Second, Google nutritional information for ALL of them and create bullet points along with estiamting their quantity.
+3. Third calculate and summarize and consider sanity checks then output your justification and final estimates.
+4. Lastly put into json format.
+5. ALWAYS try your best and ALWAYS do these reasoning steps FIRST.
+
+Please send your reasoning then send json surrounded by ||s
+JSON FORMAT:
+This is how it should be formatted: 
+||{
+  "items": [
+    {
+      "name": "Scrambled Eggs With Tabasco",
+      "Calories": 140.2355,
+      "Total fat": 7.0118,
+      "Saturated fat": 1.5025,
+      "Cholesterol": 372.0,
+      "Sodium": 265.1598,
+      "Total Carbohydrate": 1.532,
+      "Sugar": 1.0168,
+      "Added Sugar": 0.0,
+      "Dietary Fiber": 0.0,
+      "Protein": 12.5817,
+      "Calcium": 60.0101,
+      "Iron": 1.7517,
+      "allergens": [
+        "Egg"
+      ],
+      "other_potential_issues_health_hazards_etc": "Consuming raw or undercooked eggs may increase your risk of foodborne illness, such as Salmonella infection. Individuals with an egg allergy should avoid this dish.",
+      "ingredients": [
+        "2 large eggs",
+        "1 tsp butter",
+        "1 tbsp milk",
+        "1/4 tsp Tabasco sauce",
+        "Salt to taste",
+        "Pepper to taste"
+      ],
+      "estimated_flavor": "The flavor is primarily savory and rich from the eggs, with a spicy and vinegary kick from the Tabasco sauce. The texture is soft and creamy."
+    },
+    {
+      "name": "Grilled Chicken Salad",
+      "Calories": 350.5,
+      "Total fat": 15.2,
+      "Saturated fat": 3.5,
+      "Cholesterol": 85.0,
+      "Sodium": 450.8,
+      "Total Carbohydrate": 10.5,
+      "Sugar": 5.2,
+      "Added Sugar": 2.1,
+      "Dietary Fiber": 3.8,
+      "Protein": 42.3,
+      "Calcium": 80.5,
+      "Iron": 2.1,
+      "allergens": [
+        "Dairy (from cheese, if added)",
+        "Soy (from some dressings)"
+      ],
+      "other_potential_issues_health_hazards_etc": "Ensure chicken is cooked to an internal temperature of 165°F (74°C) to prevent foodborne illness. Some salad dressings can be high in sodium and added sugars.",
+      "ingredients": [
+        "6 oz grilled chicken breast",
+        "2 cups mixed greens",
+        "1/4 cup cherry tomatoes",
+        "1/4 cup cucumber",
+        "2 tbsp balsamic vinaigrette",
+        "1 oz feta cheese (optional)"
+      ],
+      "estimated_flavor": "A fresh and savory salad with the smoky taste of grilled chicken, complemented by the tangy and slightly sweet balsamic vinaigrette. The vegetables add a crisp and refreshing texture."
+    },
+    {
+      "name": "Spaghetti with Marinara Sauce",
+      "Calories": 410.0,
+      "Total fat": 8.5,
+      "Saturated fat": 1.5,
+      "Cholesterol": 0.0,
+      "Sodium": 650.0,
+      "Total Carbohydrate": 75.0,
+      "Sugar": 12.0,
+      "Added Sugar": 4.0,
+      "Dietary Fiber": 6.0,
+      "Protein": 12.0,
+      "Calcium": 60.0,
+      "Iron": 3.5,
+      "allergens": [
+        "Wheat",
+        "Gluten"
+      ],
+      "other_potential_issues_health_hazards_etc": "Individuals with celiac disease or gluten sensitivity should opt for gluten-free pasta. The sodium content can be high depending on the sauce.",
+      "ingredients": [
+        "2 oz spaghetti",
+        "1 cup marinara sauce",
+        "1/2 tbsp olive oil",
+        "1 clove garlic",
+        "Fresh basil for garnish"
+      ],
+      "estimated_flavor": "A classic Italian dish with the savory and slightly acidic taste of tomato-based marinara sauce, enhanced with garlic and fresh basil. The pasta provides a satisfying, chewy texture."
+    }
+  ]
+}||
+"""
+
+async def image_stream_generator(image_bytes: bytes):
+    api_key = os.getenv("GOOGLE_API_KEY")
+    if not api_key:
+        yield "Error: GOOGLE_API_KEY not configured on the server."
+        return
+
+    client = genai.Client(api_key=api_key)
+
+    model = "gemini-2.5-pro"
+    contents = [
+        types.Content(
+            role="user",
+            parts=[
+                types.Part.from_bytes(
+                    data=image_bytes,
+                    mime_type='image/jpeg',
+                ),
+                types.Part.from_text(text=IMAGE_PROMPT_TEMPLATE),
+
+            ],
+        ),
+    ]
+    tools = [
+        types.Tool(googleSearch=types.GoogleSearch(
+        )),
+    ]
+    generate_content_config = types.GenerateContentConfig(
+        thinking_config = types.ThinkingConfig(
+            thinking_budget=-1,
+        ),
+        tools=tools,
+    )
+
+    for chunk in client.models.generate_content_stream(
+        model=model,
+        contents=contents,
+        config=generate_content_config,
+    ):
+        yield chunk.text
+        print(chunk.text, end="")
+
+
 async def stream_generator(user_goal: str, food_info: str, chat_history: Optional[List[ChatMessage]] = None):
     """
     Generates a meal plan stream based on user goals and food information.
@@ -118,6 +267,7 @@ async def stream_generator(user_goal: str, food_info: str, chat_history: Optiona
             contents=contents,
             config=generate_content_config,
         ):
+            yield chunk.text
             print(chunk.text, end="")
     except Exception as e:
         error_message = f"An error occurred while generating the meal plan: {str(e)}"

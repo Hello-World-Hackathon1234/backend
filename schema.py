@@ -7,8 +7,6 @@ class User(Base):
     __tablename__ = "Users"
 
     id = Column(Integer,primary_key=True,nullable=False)
-    username = Column(String,nullable=False,unique=True)
-    password = Column(String,nullable=False)
     protein = Column(Float,nullable=True)
     fat = Column(Float,nullable=True)
     carbs = Column(Float,nullable=True)
@@ -46,15 +44,9 @@ class GetMealRequest(BaseModel):
     cals: int
 
 class RequestResponse(BaseModel):
-    
+
     success: bool
     message: Optional[str] = ""
-
-class UserCreate(BaseModel):
-
-    name: str
-    username: str
-    password: str
 
 class UserValuesUpdate(BaseModel):
 

@@ -155,25 +155,25 @@ async def get_recs_hilly(data: schema.RecommendRequest, request: Request, db: Se
         
         items = base.filter(schema.Menu.location == data.hall)
 
-        if "Vegan" in user.prefs:
+        if "Vegan" in user.plans:
             items = items.filter(schema.Food.traits.any("Vegan"))
-        if "Vegetarian" in user.prefs:
+        if "Vegetarian" in user.plans:
             items = items.filter(schema.Food.traits.any("Vegetarian"))
         
 
-        if "Peanuts" in user.prefs:
+        if "Peanuts" in user.plans:
             items = items.filter(~schema.Food.traits.any("Peanuts"))
-        if "Dairy" in user.prefs:
+        if "Dairy" in user.plans:
             items = items.filter(~schema.Food.traits.any("Milk"))
-        if "Eggs" in user.prefs:
+        if "Eggs" in user.plans:
             items = items.filter(~schema.Food.traits.any("Eggs"))
-        if "Fish" in user.prefs:
+        if "Fish" in user.plans:
             items = items.filter(~schema.Food.traits.any("Fish"))
-        if "Shellfish" in user.prefs:
+        if "Shellfish" in user.plans:
             items = items.filter(~schema.Food.traits.any("Shellfish"))
-        if "Soy" in user.prefs:
+        if "Soy" in user.plans:
             items = items.filter(~schema.Food.traits.any("Soy"))
-        if "Gluten" in user.prefs:
+        if "Gluten" in user.plans:
             items = items.filter(~schema.Food.traits.any("Gluten"))
         
         items = items.all()

@@ -101,7 +101,7 @@ async def update_user(response: Response, request: Request, update: schema.UserV
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error creating user: {str(e)}"
+            detail=f"Error updating user: {str(e)}"
         )
 
 @app.post("/update_user_prefs", response_model=schema.RequestResponse)
@@ -118,7 +118,7 @@ async def update_user_prefs(response:Response, request:Request, update: schema.U
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error creating user: {str(e)}"
+            detail=f"Error updating user: {str(e)}"
         )
         
 
@@ -261,7 +261,7 @@ async def get_mean(response: Response, data: schema.RecommendRequest, request: R
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error creating user: {str(e)}"
+            detail=f"Error: {str(e)}"
         )
 
 @app.post("/recommend")
@@ -351,7 +351,7 @@ async def get_recs_hilly(response: Response, data: schema.RecommendRequest, requ
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error creating user: {str(e)}"
+            detail=f"Error: {str(e)}"
         )
 
 @app.post("/rectest")

@@ -178,6 +178,9 @@ async def get_recs_hilly(data: schema.RecommendRequest, request: Request, db: Se
         
         items = items.all()
 
+        if items is None:
+            items = []
+
         items_list = []
         for entry in items:
             if "Sauce" in entry.name:

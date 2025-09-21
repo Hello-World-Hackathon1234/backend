@@ -49,7 +49,7 @@ async def new_user(response: Response, db: Session = Depends(get_db)):
 
         response.set_cookie(key="token", value=token, httponly=True)
         
-        return {success: "YAYYYYY"}
+        return {"success": "YAYYYYY"}
     except Exception as e:
         db.rollback()
         raise HTTPException(

@@ -67,7 +67,7 @@ async def new_user(request: Request, response: Response, db: Session = Depends(g
 
         token = sign_jwt(db_user.id, os.environ["JWT_SECRET"])
 
-        response.set_cookie(key="token", value=token, httponly=True)
+        response.set_cookie(key="token", value=token, httponly=True, samesite="lax")
         
         return {"success": "YAYYYYY"}
     except Exception as e:

@@ -2,11 +2,19 @@ import os
 from pydantic import BaseModel
 from google import genai
 from google.genai import types
+from typing import List, Optional
+
+# Define a model for a single chat message
+class ChatMessage(BaseModel):
+    role: str
+    text: str
 
 class MealPlanRequest(BaseModel):
     user_goal: str
     food_info: str
-    
+    # This line makes it optional
+    chat_history: Optional[List[ChatMessage]] = None
+
 SYSTEM_PROMPT = """
 You are a diet advisor. You should help the user reach their goals using the information provided to you. Please start by Google searching, research best practices and tips/tricks, any other useful information including best communication methods. There is a dictionary of all food at Purdue. Please use it and don't suggest anything not there. Say specific item names etc. Whenever you suggest food send the name from the dictionary and some of their ingredients.
 
@@ -64,7 +72,10 @@ If they ask for something impossible, state it in the justification, but do your
 User Goal: {user_goal}
 """
 
-async def stream_generator(user_goal: str, food_info: str):
+async def stream_generator(user_goal: str, food_info: str, chat_history: Optional[List[ChatMessage]] = None):
+    """
+    Generates a meal plan stream based on user goals and food information.
+    """
     try:
         client = genai.Client(
             api_key=os.getenv("GOOGLE_API_KEY"),
@@ -103,7 +114,6 @@ async def stream_generator(user_goal: str, food_info: str):
             config=generate_content_config,
         ):
             print(chunk.text, end="")
-            yield chunk.text
     except Exception as e:
         error_message = f"An error occurred while generating the meal plan: {str(e)}"
         yield error_message

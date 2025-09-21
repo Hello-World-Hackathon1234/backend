@@ -165,7 +165,7 @@ async def get_recs_hilly(day: int, hall: str, meal_type: str, request: Request, 
                 continue
             items_list.append(create_food_item(entry.name, entry.nutrition))
         
-        result_list = find_optimal_foods_balanced(data.protein, data.carbs, data.fat, data.cals, items_list)
+        result_list = find_optimal_foods_balanced(user.protein, user.carbs, user.fat, user.cals, items_list)
         return result_list
         
         

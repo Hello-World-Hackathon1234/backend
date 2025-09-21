@@ -155,6 +155,11 @@ async def get_recs_hilly(data: schema.RecommendRequest, request: Request, db: Se
         
         items = base.filter(schema.Menu.location == data.hall)
 
+        if user.plans is None:
+            user.plans = []
+            db.commit()
+            db.refresh(user)
+
         if "Vegan" in user.plans:
             items = items.filter(schema.Food.traits.any("Vegan"))
         if "Vegetarian" in user.plans:

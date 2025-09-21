@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends, Response, Request, Cookie
+from fastapi import FastAPI, HTTPException, Depends, Response, Request, Cookie, Body
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from starlette import status
@@ -7,6 +7,9 @@ import schema
 from database import get_db
 from auth_handler import sign_jwt, decode_jwt
 from optimize import find_optimal_foods_greedy, create_food_item, find_optimal_foods_balanced
+import os
+from fastapi.responses import StreamingResponse
+from advisor_ai import *
 
 app = FastAPI()
 
@@ -17,6 +20,18 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.post("/generate-meal-plan-stream")
+async def generate_meal_plan_stream(request: MealPlanRequest = Body(...)):
+    if not os.getenv("GOOGLE_API_KEY"):
+        raise HTTPException(
+            status_code=500, detail="GOOGLE_API_KEY environment variable not set."
+        )
+    
+    return StreamingResponse(
+        stream_generator(request.user_goal, request.food_info),
+        media_type="text/plain",
+    )
 
 @app.post("/create_user", response_model=schema.RequestResponse)
 async def new_user(user_data: schema.UserCreate, db: Session = Depends(get_db)):

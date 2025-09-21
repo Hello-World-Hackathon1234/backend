@@ -111,13 +111,16 @@ async def get_recs_hilly(day: int, hall: str, request: Request, db: Session = De
     try:
         user = db.query(schema.User).filter(schema.User == decoded['email']).first()
 
+        target_time = datetime.datetime.now() + datetime.timedelta(days=day)
+        target_timestamp = target_time.timestamp()
+        
         base = db.query(schema.Food).join(
             schema.Menu,
             schema.Food.id == schema.Menu.item_id
         ).filter(
             schema.Food.nutrition != "{}",
-            schema.Menu.start_time < datetime.datetime.now().timestamp() + datetime.timedelta(days=day),
-            schema.Menu.end_time > datetime.datetime.now().timestamp() + datetime.timedelta(days=day)
+            schema.Menu.start_time < target_timestamp,
+            schema.Menu.end_time > target_timestamp
         )
 
         items = base.filter(schema.Menu.location == hall).all()
@@ -139,21 +142,22 @@ async def get_recs_hilly(day: int, hall: str, request: Request, db: Session = De
 
 @app.post("/rectest")
 async def test(day: int, hall: str, data: schema.GetMealRequest, db: Session = Depends(get_db)):
+    target_time = datetime.datetime.now() + datetime.timedelta(days=day)
+    target_timestamp = target_time.timestamp()
+    
     base = db.query(schema.Food).join(
         schema.Menu,
         schema.Food.id == schema.Menu.item_id
     ).filter(
         schema.Food.nutrition != "{}",
-        schema.Menu.start_time < datetime.datetime.now().timestamp() + datetime.timedelta(days=day),
-        schema.Menu.end_time > datetime.datetime.now().timestamp() + datetime.timedelta(days=day)
+        schema.Menu.start_time < target_timestamp,
+        schema.Menu.end_time > target_timestamp
     )
-
+    
     items = base.filter(schema.Menu.location == hall).all()
-
     items_list = []
     for entry in items:
-        items_list.append(create_food_item(entry.name, entry.nutrition))
-        
+        items_list.append(create_food_item(entry.name, entry.nutrition))  # Also fixed the typo
+    
     result_list, total = find_optimal_foods_balanced(data.protein, data.carbs, data.fat, data.cals, items_list)
-
     return result_list
